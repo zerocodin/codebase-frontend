@@ -451,6 +451,11 @@ const ProfileActions = ({ user, onUpdate }) => {
 
     const handleSubmit = async (e) => {
       e.preventDefault();
+
+      if(email == 'demo@demo.com'){
+        toast.error("Demo account can't be deleted");
+        return;
+      }
       setSubmitting(true);
       try {
         await profileService.deleteAccount({ email, password });
