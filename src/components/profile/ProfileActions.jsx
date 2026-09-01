@@ -25,9 +25,14 @@ const ProfileActions = ({ user, onUpdate }) => {
 
     const handleVerifyAccount = async (e) => {
       e.preventDefault();
-
+      
       if (!email || !password) {
         toast.error("Please fill in all fields");
+        return;
+      }
+      
+      if (email == 'demo@demo.com') {
+        toast.error("you can't change demo email");
         return;
       }
 
@@ -340,6 +345,12 @@ const ProfileActions = ({ user, onUpdate }) => {
         toast.error("Passwords do not match");
         return;
       }
+
+      if (currentPassword == '111111') {
+        toast.error("you can't chage this account password");
+        return;
+      }
+
       if (newPassword.length < 6) {
         toast.error("Password must be at least 6 characters");
         return;
