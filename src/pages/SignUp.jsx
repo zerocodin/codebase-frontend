@@ -152,38 +152,39 @@ const SignUp = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // if (!validateForm()) {
-    //   toast.error("Please fix all validation errors");
-    //   return;
-    // }
+    /*if (!validateForm()) {
+      toast.error("Please fix all validation errors");
+      return;
+    }
 
     try {
-      // const result = await authService.register({
-      //   name: formData.name,
-      //   email: formData.email,
-      //   username: formData.username,
-      //   password: formData.password,
-      // });
+      const result = await authService.register({
+        name: formData.name,
+        email: formData.email,
+        username: formData.username,
+        password: formData.password,
+      });
 
-      // setStep(2);
-      // await axios.post(
-      //   `${otpURL}/sendOTP`,
-      //   { email: formData.email },
-      //   { withCredentials: true },
-      // );
-      // toast.success(result.message);
+      setStep(2);
+      await axios.post(
+        `${otpURL}/sendOTP`,
+        { email: formData.email },
+        { withCredentials: true },
+      );
+      toast.success(result.message);
 
-      // setCooldown(30);
-      // setIsCooldownActive(true);
+      setCooldown(30);
+      setIsCooldownActive(true);
       nothing here
     } catch (error) {
       const errorMessage =
-      error.response?.data?.message || "SMTP service is not working now";
+      error.response?.data?.message || "Something went wrong!";
 
-    toast.error(`${errorMessage}
+    toast.error(errorMessage)
+    }*/
+    toast.error("SMTP is not avaiable now,
       Use: demo@demo.com
-      password: 12345678`)
-    }
+      password: 12345678")
   };
 
   const handleVerify = async (e) => {
