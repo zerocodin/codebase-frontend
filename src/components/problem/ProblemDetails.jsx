@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
@@ -7,13 +7,14 @@ import {
   Moon,
   PanelRightClose,
   PanelRightOpen,
+  GripVertical,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import problemService from "../../services/problem.Service";
 import { executeCode } from "../../services/execution.Service";
-import { useAuth } from "../contexts/AuthContext"; 
-import submissionService from "../../services/submission.Service"; 
+import { useAuth } from "../contexts/AuthContext";
+import submissionService from "../../services/submission.Service";
 import CodeEditor from "./CodeEditor";
 import ProblemInfo from "./ProblemInfo";
 
@@ -21,7 +22,7 @@ const ProblemDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
   const [problem, setProblem] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,11 @@ const ProblemDetails = () => {
   const [contest, setContest] = useState(null);
   const contestId = location.state?.contestId || null;
 
-    
+  // State for panel resizing
+  const [leftPanelWidth, setLeftPanelWidth] = useState(50); // in percentage
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef(null);
+
   const languages = [
     { id: "python", label: "Python", extension: "py" },
     { id: "javascript", label: "JavaScript", extension: "js" },
@@ -135,12 +140,11 @@ const ProblemDetails = () => {
     setOutput("");
 
     try {
-
       const result = await submissionService.submitSolution({
         problemId: id,
         code: code,
         language: language,
-        contestId: contestId, 
+        contestId: contestId,
       });
 
       if (result.success) {
@@ -204,6 +208,48 @@ const ProblemDetails = () => {
     setInput(sampleInput);
   };
 
+  // Handle panel resize
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging || !containerRef.current) return;
+
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newWidth =
+        ((e.clientX - containerRect.left) / containerRect.width) * 100;
+
+      // Set minimum and maximum width constraints
+      const minWidth = 20;
+      const maxWidth = 80;
+
+      if (newWidth >= minWidth && newWidth <= maxWidth) {
+        setLeftPanelWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "col-resize";
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+  }, [isDragging]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -235,69 +281,89 @@ const ProblemDetails = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      <div className="flex-1 flex overflow-hidden">
+      <div ref={containerRef} className="flex-1 flex overflow-hidden">
         {/* Left Panel - Problem Details */}
-        <div
-          className={`${isEditorVisible ? "w-1/2" : "w-full"} overflow-y-auto border-r border-gray-200 bg-white`}
-        >
-          <ProblemInfo problem={problem} onLoadSample={loadSampleInput} />
-        </div>
-
-        {/* Right Panel - Code Editor */}
-        <div
-          className={`${isEditorVisible ? "w-1/2" : "w-auto"} flex flex-col bg-gray-900 relative`}
-        >
-          {isEditorVisible && (
-            <button
-              onClick={toggleTheme}
-              className="absolute top-2 right-14 z-10 p-2 rounded-lg bg-gray-800/80 hover:bg-gray-700 transition-colors border border-gray-700 shadow-lg"
-              title={
-                theme === "vs-dark"
-                  ? "Switch to Light Mode"
-                  : "Switch to Dark Mode"
-              }
+        {isEditorVisible ? (
+          <>
+            <div
+              className="overflow-y-auto border-r border-gray-200 bg-white"
+              style={{ width: `${leftPanelWidth}%` }}
             >
-              {theme === "vs-dark" ? (
-                <Sun className="w-5 h-5 text-yellow-400" />
-              ) : (
-                <Moon className="w-5 h-5 text-gray-300" />
-              )}
-            </button>
-          )}
+              <ProblemInfo problem={problem} onLoadSample={loadSampleInput} />
+            </div>
 
-          <button
-            onClick={toggleEditor}
-            className="absolute top-2 right-4 z-20 p-2 rounded-lg bg-gray-800/80 hover:bg-gray-700 transition-colors border border-gray-700 shadow-lg"
-            title={isEditorVisible ? "Hide Editor" : "Show Editor"}
-          >
-            {isEditorVisible ? (
-              <PanelRightClose className="w-5 h-5 text-gray-300" />
-            ) : (
-              <PanelRightOpen className="w-5 h-5 text-gray-300" />
-            )}
-          </button>
+            {/* Resize Handle */}
+            <div
+              className="flex items-center justify-center w-1.5 bg-gray-200 hover:bg-blue-500 cursor-col-resize transition-colors group shrink-0"
+              onMouseDown={handleMouseDown}
+            >
+              <GripVertical className="w-3 h-3 text-gray-400 group-hover:text-white transition-colors" />
+            </div>
 
-          {isEditorVisible && (
-            <CodeEditor
-              problem={problem}
-              code={code}
-              setCode={setCode}
-              language={language}
-              setLanguage={handleLanguageChange}
-              languages={languages}
-              input={input}
-              setInput={setInput}
-              output={output}
-              setOutput={setOutput}
-              isRunning={isRunning}
-              isSubmitting={isSubmitting}
-              onRun={handleRun}
-              onSubmit={handleSubmit}
-              theme={theme}
-              onToggleTheme={toggleTheme}
-            />
-          )}
-        </div>
+            {/* Right Panel - Code Editor */}
+            <div
+              className="flex flex-col bg-gray-900 relative"
+              style={{ width: `${100 - leftPanelWidth}%` }}
+            >
+              <button
+                onClick={toggleTheme}
+                className="absolute top-2 right-14 z-10 p-2 rounded-lg bg-gray-800/80 hover:bg-gray-700 transition-colors border border-gray-700 shadow-lg"
+                title={
+                  theme === "vs-dark"
+                    ? "Switch to Light Mode"
+                    : "Switch to Dark Mode"
+                }
+              >
+                {theme === "vs-dark" ? (
+                  <Sun className="w-5 h-5 text-yellow-400" />
+                ) : (
+                  <Moon className="w-5 h-5 text-gray-300" />
+                )}
+              </button>
+
+              <button
+                onClick={toggleEditor}
+                className="absolute top-2 right-4 z-20 p-2 rounded-lg bg-gray-800/80 hover:bg-gray-700 transition-colors border border-gray-700 shadow-lg"
+                title={isEditorVisible ? "Hide Editor" : "Show Editor"}
+              >
+                <PanelRightClose className="w-5 h-5 text-gray-300" />
+              </button>
+
+              <CodeEditor
+                problem={problem}
+                code={code}
+                setCode={setCode}
+                language={language}
+                setLanguage={handleLanguageChange}
+                languages={languages}
+                input={input}
+                setInput={setInput}
+                output={output}
+                setOutput={setOutput}
+                isRunning={isRunning}
+                isSubmitting={isSubmitting}
+                onRun={handleRun}
+                onSubmit={handleSubmit}
+                theme={theme}
+                onToggleTheme={toggleTheme}
+              />
+            </div>
+          </>
+        ) : (
+          /* Full width when editor is hidden */
+          <div className="w-full overflow-y-auto bg-white">
+            <div className="relative">
+              <button
+                onClick={toggleEditor}
+                className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors border border-gray-300 shadow-lg"
+                title="Show Editor"
+              >
+                <PanelRightOpen className="w-5 h-5 text-gray-700" />
+              </button>
+              <ProblemInfo problem={problem} onLoadSample={loadSampleInput} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
