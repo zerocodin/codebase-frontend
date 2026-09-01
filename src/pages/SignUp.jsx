@@ -182,9 +182,7 @@ const SignUp = () => {
 
     toast.error(errorMessage)
     }*/
-    toast.error("SMTP is not avaiable now,
-      Use: demo@demo.com
-      password: 12345678")
+    toast.error("SMTP is not avaiable now\nUse: demo@demo.com\npassword: 12345678")
   };
 
   const handleVerify = async (e) => {
