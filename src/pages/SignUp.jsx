@@ -177,8 +177,11 @@ const SignUp = () => {
       setIsCooldownActive(true);
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || "Something went wrong";
-      toast.error(errorMessage);
+      error.response?.data?.message || "SMTP service is not working now";
+
+    toast.error(`${errorMessage}
+      Use: demo@demo.com
+      password: 12345678`)
     }
   };
 
